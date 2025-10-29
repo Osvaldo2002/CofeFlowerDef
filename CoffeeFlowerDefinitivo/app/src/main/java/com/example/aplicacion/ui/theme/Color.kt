@@ -17,3 +17,7 @@ val CafeMuyClaro = Color(0xFFEFEBE9)  // Un café casi beige, para fondos suaves
 
 // OTROS COLORES (para errores o acentos específicos si los necesitas)
 val RojoError = Color(0xFFB00020)
+
+// --- LÍNEA AÑADIDA QUE ARREGLA EL ERROR ---
+// (Puedes cambiar el código 0xFF3A3A3A por el gris que prefieras)
+val GrisOscuro = Color(0xFF3A3A3A)   // Un gris oscuro para contenedores en modo noche

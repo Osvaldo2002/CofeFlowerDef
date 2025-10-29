@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-val GrisOscuro: Color = TODO()
+// (La línea "val GrisOscuro: Color = TODO()" ha sido eliminada)
 
 // --- Define el esquema de colores para el TEMA OSCURO ---
 private val DarkColorScheme = darkColorScheme(
@@ -65,8 +65,9 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun CoffeeFlowerDefinitivoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true, // Esto usa los colores del fondo de pantalla en Android 12+
+    // --- CAMBIO REALIZADO AQUÍ ---
+    // Se establece en 'false' para forzar tus colores personalizados
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
