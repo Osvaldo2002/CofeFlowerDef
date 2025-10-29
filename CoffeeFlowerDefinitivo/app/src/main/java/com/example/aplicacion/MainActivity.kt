@@ -11,7 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-// No importamos AplicacionTheme porque no existe
+
+// --- IMPORTACIONES CLAVE ---
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aplicacion.CarritoViewModel
+import com.example.aplicacion.ui.theme.CoffeeFlowerDefinitivoTheme // <-- 1. IMPORTA TU TEMA
+
+// ---
 
 // Importamos TODAS las pantallas
 import com.example.aplicacion.screens.InicioScreen
@@ -22,20 +28,21 @@ import com.example.aplicacion.screens.CarritoScreen
 import com.example.aplicacion.screens.QuienesSomosScreen
 // Importamos las RUTAS
 import com.example.aplicacion.AppScreens
-import com.example.aplicacion.screens.LoginSCreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // HEMOS QUITADO EL "AplicacionTheme" QUE DABA ERROR
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                // Llamamos directamente a nuestra navegación
-                AppNavigation()
+            // --- 2. ENVUELVE TU APP CON EL TEMA ---
+            CoffeeFlowerDefinitivoTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background // <-- Ahora usará el color de tu tema
+                ) {
+                    AppNavigation()
+                }
             }
+            // ---
         }
     }
 }
@@ -44,28 +51,48 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
+    // --- CREAMOS UNA ÚNICA INSTANCIA DEL VIEWMODEL AQUÍ ---
+    val carritoViewModel: CarritoViewModel = viewModel()
+
     NavHost(
         navController = navController,
         startDestination = AppScreens.INICIO // Pantalla inicial
     ) {
-        // Definimos todas las rutas
+        // Pantallas que no necesitan el ViewModel
         composable(route = AppScreens.INICIO) {
             InicioScreen(navController = navController)
         }
         composable(route = AppScreens.LOGIN) {
             LoginSCreen(navController = navController)
         }
-        composable(route = AppScreens.PRODUCTOS) {
-            ProductosScreen(navController = navController)
-        }
-        composable(route = AppScreens.AGREGAR_PRODUCTO) {
-            AgregarProductoScreen(navController = navController)
-        }
-        composable(route = AppScreens.CARRITO) {
-            CarritoScreen(navController = navController)
-        }
         composable(route = AppScreens.QUIENES_SOMOS) {
             QuienesSomosScreen(navController = navController)
+        }
+
+        // --- PANTALLAS QUE SÍ NECESITAN EL VIEWMODEL ---
+
+        // 1. Pantalla de Productos
+        composable(route = AppScreens.PRODUCTOS) {
+            ProductosScreen(
+                navController = navController,
+                viewModel = carritoViewModel
+            )
+        }
+
+        // 2. Pantalla de Agregar Producto
+        composable(route = AppScreens.AGREGAR_PRODUCTO) {
+            AgregarProductoScreen(
+                navController = navController,
+                viewModel = carritoViewModel
+            )
+        }
+
+        // 3. Pantalla de Carrito
+        composable(route = AppScreens.CARRITO) {
+            CarritoScreen(
+                navController = navController,
+                viewModel = carritoViewModel
+            )
         }
     }
 }

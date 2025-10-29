@@ -2,16 +2,30 @@ package com.example.aplicacion.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aplicacion.AppScreens
+import com.example.aplicacion.CarritoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgregarProductoScreen(navController: NavController) {
+fun AgregarProductoScreen(
+    navController: NavController,
+    viewModel: CarritoViewModel
+) {
+    var nombre by remember { mutableStateOf("") }
+    var descripcion by remember { mutableStateOf("") }
+    var precio by remember { mutableStateOf("") }
+    var stock by remember { mutableStateOf("") }
+    var categoria by remember { mutableStateOf("") }
+    var fotoUrl by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -26,6 +40,7 @@ fun AgregarProductoScreen(navController: NavController) {
             BottomAppBar(containerColor = MaterialTheme.colorScheme.primaryContainer) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Button(onClick = { navController.navigate(AppScreens.INICIO) }) { Text("Inicio") }
+                    Button(onClick = { navController.navigate(AppScreens.PRODUCTOS) }) { Text("Ver Productos") }
                 }
             }
         }
@@ -39,58 +54,93 @@ fun AgregarProductoScreen(navController: NavController) {
         ) {
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
+                    value = nombre,
+                    onValueChange = { nombre = it },
                     label = { Text("Nombre *") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = error?.contains("Nombre") == true,
+                    singleLine = true
                 )
             }
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
+                    value = descripcion,
+                    onValueChange = { descripcion = it },
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
+                    value = precio,
+                    onValueChange = { precio = it },
                     label = { Text("Precio *") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    prefix = { Text("$") },
+                    isError = error?.contains("Precio") == true
                 )
             }
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
+                    value = stock,
+                    onValueChange = { stock = it },
                     label = { Text("Stock") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = error?.contains("Stock") == true
                 )
             }
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    label = { Text("Categoría (Dropdown)") },
-                    modifier = Modifier.fillMaxWidth()
+                    value = categoria,
+                    onValueChange = { categoria = it },
+                    label = { Text("Categoría") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
                 )
             }
             item {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    label = { Text("Foto (Picker)") },
+                    value = fotoUrl,
+                    onValueChange = { fotoUrl = it },
+                    label = { Text("URL de la Foto") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            if (error != null) {
+                item {
+                    Text(error!!, color = MaterialTheme.colorScheme.error)
+                }
+            }
+
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Button(onClick = { /* Lógica de Guardar */ }) {
+                    Button(onClick = {
+                        val precioDouble = precio.toDoubleOrNull()
+                        val stockInt = stock.toIntOrNull() ?: 0
+
+                        if (nombre.isBlank()) {
+                            error = "Error: El 'Nombre' es obligatorio."
+                        } else if (precioDouble == null || precioDouble <= 0) {
+                            error = "Error: El 'Precio' debe ser un número válido."
+                        } else {
+                            error = null
+                            viewModel.agregarNuevoProducto(
+                                nombre = nombre,
+                                descripcion = descripcion,
+                                precio = precioDouble,
+                                stock = stockInt,
+                                categoria = if (categoria.isBlank()) "General" else categoria,
+                                imagenUrl = fotoUrl
+                            )
+                            navController.popBackStack() // Volver a la pantalla anterior
+                        }
+                    }) {
                         Text("Guardar")
                     }
-                    OutlinedButton(onClick = { navController.popBackStack() }) { // popBackStack() vuelve atrás
+                    OutlinedButton(onClick = { navController.popBackStack() }) {
                         Text("Cancelar")
                     }
                 }
