@@ -11,17 +11,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aplicacion.AppScreens
+import com.example.aplicacion.AuthViewModel
 import com.example.aplicacion.CarritoViewModel
 import com.example.aplicacion.model.CartItem
+import com.example.aplicacion.model.ValorOpcion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CarritoScreen(
     navController: NavController,
-    viewModel: CarritoViewModel
+    viewModel: CarritoViewModel,
+    authViewModel: AuthViewModel // <-- ACEPTA EL AUTHVIEWMODEL
 ) {
-    val carritoItems by viewModel.carrito.collectAsState()
+    val carrito by viewModel.carrito.collectAsState()
     val total by viewModel.totalCarrito.collectAsState()
+    val userEmail by authViewModel.userEmail.collectAsState()
 
     Scaffold(
         topBar = {
@@ -34,80 +38,69 @@ fun CarritoScreen(
             )
         },
         bottomBar = {
-            BottomAppBar(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Button(onClick = { navController.navigate(AppScreens.INICIO) }) { Text("Inicio") }
-                    Button(onClick = { navController.navigate(AppScreens.PRODUCTOS) }) { Text("Productos") }
-                }
-            }
+            // Usamos la barra de navegación estándar
+            AppBottomBar(navController = navController, authViewModel = authViewModel)
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
+                .padding(16.dp)
                 .fillMaxSize()
         ) {
-
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
-            ) {
-
-                if (carritoItems.isEmpty()) {
-                    item {
-                        Text(
-                            "Tu carrito está vacío",
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.titleMedium
+            if (carrito.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Tu carrito está vacío", style = MaterialTheme.typography.headlineSmall)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(carrito) { item ->
+                        CarritoItem(
+                            item = item,
+                            onSumar = { viewModel.agregarAlCarrito(item.producto, item.opcionesSeleccionadas) },
+                            onRestar = { viewModel.restarDelCarrito(item) },
+                            onEliminar = { viewModel.eliminarDelCarrito(item) }
                         )
                     }
                 }
 
-                items(carritoItems) { item ->
-                    CarritoItemView(
-                        item = item,
-                        onRestar = { viewModel.restarDelCarrito(item) },
-                        onSumar = { viewModel.agregarAlCarrito(item.producto, item.opcionesSeleccionadas) },
-                        onEliminar = { viewModel.eliminarDelCarrito(item) }
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // --- SECCIÓN DE TOTALES Y PAGAR ---
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    val totalOpciones = carritoItems.sumOf { item ->
-                        item.opcionesSeleccionadas.values.sumOf { it.precioAdicional } * item.cantidad
-                    }
-                    val subtotal = total - totalOpciones
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Total:", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                            Text("$${"%.0f".format(total)}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Text("Subtotal: $${"%.0f".format(subtotal)}")
-                    if (totalOpciones > 0) {
-                        Text("Adicionales: $${"%.0f".format(totalOpciones)}")
-                    }
-
-                    Text(
-                        "Total: $${"%.0f".format(total)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { /* Lógica de Pagar */ },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = carritoItems.isNotEmpty()
-                    ) {
-                        Text("Pagar")
+                        Button(
+                            onClick = {
+                                if (userEmail != null) {
+                                    val boletaId = viewModel.generarBoleta(userEmail!!)
+                                    navController.navigate(AppScreens.BOLETA_GENERADA + "/$boletaId") {
+                                        popUpTo(AppScreens.INICIO)
+                                    }
+                                } else {
+                                    navController.navigate(AppScreens.LOGIN)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (userEmail != null) "Pagar Ahora" else "Iniciar Sesión para Pagar")
+                        }
                     }
                 }
             }
@@ -116,52 +109,53 @@ fun CarritoScreen(
 }
 
 @Composable
-fun CarritoItemView(
+fun CarritoItem(
     item: CartItem,
-    onRestar: () -> Unit,
     onSumar: () -> Unit,
+    onRestar: () -> Unit,
     onEliminar: () -> Unit
 ) {
-    val precioBase = item.producto.precio
-    val precioOpciones = item.opcionesSeleccionadas.values.sumOf { it.precioAdicional }
-    val precioUnitario = precioBase + precioOpciones
-
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text(item.producto.nombre, style = MaterialTheme.typography.titleMedium)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(item.producto.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
-            item.opcionesSeleccionadas.forEach { (nombreOpcion, valorOpcion) ->
+                    if (item.opcionesSeleccionadas.isNotEmpty()) {
+                        item.opcionesSeleccionadas.forEach { (nombreOpcion, valorOpcion) ->
+                            Text(
+                                text = "  · ${valorOpcion.nombre}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                val precioItem = (item.producto.precio + item.opcionesSeleccionadas.values.sumOf { it.precioAdicional }) * item.cantidad
                 Text(
-                    "  • ${valorOpcion.nombre}",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 8.dp)
+                    text = "$${"%.0f".format(precioItem)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Text("Precio unitario: $${"%.0f".format(precioUnitario)}")
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(
-                        onClick = onRestar,
-                        modifier = Modifier.size(40.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { Text("-") }
-
-                    Text("${item.cantidad}", modifier = Modifier.padding(horizontal = 16.dp))
-
-                    OutlinedButton(
-                        onClick = onSumar,
-                        modifier = Modifier.size(40.dp),
-                        contentPadding = PaddingValues(0.dp)
-                    ) { Text("+") }
+                    OutlinedButton(onClick = onRestar, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) { Text("-") }
+                    Text(text = "${item.cantidad}", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodyLarge)
+                    OutlinedButton(onClick = onSumar, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) { Text("+") }
                 }
-
                 TextButton(onClick = onEliminar) {
                     Text("Eliminar")
                 }

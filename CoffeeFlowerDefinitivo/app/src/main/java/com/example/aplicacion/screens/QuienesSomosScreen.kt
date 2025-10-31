@@ -1,18 +1,25 @@
 package com.example.aplicacion.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.aplicacion.AppScreens
+import com.example.aplicacion.AuthViewModel
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuienesSomosScreen(navController: NavController) {
+fun QuienesSomosScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel // <-- ACEPTA EL AUTHVIEWMODEL
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -24,65 +31,63 @@ fun QuienesSomosScreen(navController: NavController) {
             )
         },
         bottomBar = {
-            BottomAppBar(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Button(onClick = { navController.navigate(AppScreens.INICIO) }) { Text("Inicio") }
-                }
-            }
+            // Usamos la barra de navegación estándar
+            AppBottomBar(navController = navController, authViewModel = authViewModel)
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
                 .fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Logo y Misión/Visión
+
+            // 1. Logo y Misión/Visión
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Card(modifier = Modifier.size(100.dp)) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Logo")
-                        }
-                    }
-                    Card(modifier = Modifier.height(100.dp).weight(1f).padding(start = 16.dp)) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Misión / Visión (Texto)")
-                        }
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current)
+                                .data(data = "https://placehold.co/400x400/6F4E37/FFFFFF?text=Logo")
+                                .apply(block = fun ImageRequest.Builder.() {
+                                    crossfade(true)
+                                }).build()
+                        ),
+                        contentDescription = "Logo",
+                        modifier = Modifier.size(120.dp)
+                    )
+                    Column {
+                        Text("Misión / Visión", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "Ser la mejor cafetería de la región, ofreciendo productos de calidad " +
+                                    "y un espacio acogedor para nuestros clientes.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
             }
 
-            // Historia
+            // 2. Historia
             item {
-                Card(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                        Text("Historia (Texto)\n\nAquí va la historia de Coffee Flowers...")
-                    }
-                }
+                Text("Historia", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Coffee Flower nació en 2024 con el sueño de dos emprendedores de " +
+                            "traer el mejor café de grano a la comunidad...",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
 
-            // Equipo
+            // 3. Equipo
             item {
-                Card(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                        Text("Equipo (Avatares)\n\n- Persona 1\n- Persona 2")
-                    }
-                }
+                Text("Equipo", style = MaterialTheme.typography.titleLarge)
+                Text("Conoce a nuestro talentoso equipo de baristas.", style = MaterialTheme.typography.bodyMedium)
             }
 
-            // Contacto
+            // 4. Contacto
             item {
-                Card(modifier = Modifier.fillMaxWidth().height(120.dp)) {
-                    Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                        Text("Contacto (Email, Tel, RRSS)\n\n- Mail: contacto@coffeeflowers.cl\n- Tel: +56 9 ...")
-                    }
-                }
+                Text("Contacto", style = MaterialTheme.typography.titleLarge)
+                Text("Email: contacto@coffeeflower.com\nTel: +56 9 1234 5678\nRRSS: @coffeeflower", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
