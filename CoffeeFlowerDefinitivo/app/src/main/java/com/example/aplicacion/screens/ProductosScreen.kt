@@ -1,5 +1,8 @@
 package com.example.aplicacion.screens
 
+// --- 👇 1. AÑADE ESTE IMPORT ---
+import androidx.compose.material3.FabPosition // Para el botón flotante
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,7 +30,7 @@ fun ProductosScreen(
 ) {
     val productos by viewModel.productos.collectAsState()
     val esAdmin by authViewModel.esAdmin.collectAsState()
-    val userEmail by authViewModel.userEmail.collectAsState()
+    // val userEmail by authViewModel.userEmail.collectAsState() // Ya no se usa en la nueva barra
 
     Scaffold(
         topBar = {
@@ -39,50 +42,27 @@ fun ProductosScreen(
                 )
             )
         },
+        // --- 👇 2. SE REEMPLAZA EL 'bottomBar' ANTIGUO POR EL NUEVO ---
         bottomBar = {
-            BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    // Fila 1: Botones de navegación
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(onClick = { navController.navigate(AppScreens.INICIO) }) { Text("Inicio") }
-                        Button(onClick = { navController.navigate(AppScreens.CARRITO) }) { Text("Carrito") }
-
-                        if (esAdmin) {
-                            OutlinedButton(onClick = { navController.navigate(AppScreens.ADMIN_PANEL) }) {
-                                Text("Panel Admin")
-                            }
-                        } else if (userEmail != null) {
-                            TextButton(onClick = { authViewModel.logout() }) {
-                                Text("Cerrar Sesión")
-                            }
-                        } else {
-                            OutlinedButton(onClick = { navController.navigate(AppScreens.LOGIN) }) {
-                                Text("Login")
-                            }
-                        }
-                    }
-
-                    if (userEmail != null && !esAdmin) {
-                        Text(
-                            text = "Logeado como: $userEmail",
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-        }
+            // Usamos la misma barra de navegación profesional de InicioScreen
+            AppBottomBar(
+                navController = navController,
+                authViewModel = authViewModel
+            )
+        },
+        // --- 👇 3. SE AÑADE EL BOTÓN FLOTANTE ---
+        floatingActionButton = {
+            // Usamos el mismo botón flotante de InicioScreen
+            CarritoFloatingButton(
+                navController = navController,
+                carritoViewModel = viewModel
+            )
+        },
+        floatingActionButtonPosition = FabPosition.End // Lo posiciona a la derecha
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .padding(innerPadding) // <-- AHORA SÍ USAMOS EL PADDING
+                .padding(innerPadding) // <-- Usamos el padding del Scaffold
                 .padding(16.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -97,8 +77,7 @@ fun ProductosScreen(
                 }
             }
 
-            items(productos) { producto ->
-                // --- ESTA ES LA FUNCIÓN QUE DABA ERROR ---
+            items(productos, key = { it.id }) { producto -> // <-- Añadido key para mejor rendimiento
                 ProductoItem(
                     producto = producto,
                     onAgregarClick = { productoSeleccionado, opcionesElegidas ->
@@ -117,7 +96,10 @@ fun ProductosScreen(
     }
 }
 
-// --- === ESTA ES LA PARTE QUE PROBABLEMENTE FALTABA === ---
+// --- ======================================================= ---
+// --- EL RESTO DEL ARCHIVO (ProductoItem, Diálogos, etc.) ---
+// --- NO NECESITA NINGÚN CAMBIO ---
+// --- ======================================================= ---
 
 @Composable
 fun ProductoItem(
@@ -141,7 +123,7 @@ fun ProductoItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(producto.nombre, style = MaterialTheme.typography.titleMedium)
-                Text(producto.descripcion, style = MaterialTheme.typography.bodySmall)
+                Text(producto.descripcion, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis) // <-- Límite de líneas
                 Text("$${"%.0f".format(producto.precio)}", style = MaterialTheme.typography.bodyMedium)
             }
 

@@ -37,8 +37,10 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
+    // Inicializamos todos los ViewModels aquí para compartirlos
     val carritoViewModel: CarritoViewModel = viewModel()
     val authViewModel: AuthViewModel = viewModel()
+    val categoriasViewModel: CategoriasViewModel = viewModel()
 
     NavHost(
         navController = navController,
@@ -54,7 +56,6 @@ fun AppNavigation() {
                 carritoViewModel = carritoViewModel
             )
         }
-
         composable(route = AppScreens.PRODUCTOS) {
             ProductosScreen(
                 navController = navController,
@@ -62,7 +63,6 @@ fun AppNavigation() {
                 authViewModel = authViewModel
             )
         }
-
         composable(route = AppScreens.CARRITO) {
             CarritoScreen(
                 navController = navController,
@@ -70,7 +70,6 @@ fun AppNavigation() {
                 authViewModel = authViewModel
             )
         }
-
         composable(route = AppScreens.QUIENES_SOMOS) {
             QuienesSomosScreen(
                 navController = navController,
@@ -81,7 +80,7 @@ fun AppNavigation() {
         // --- FLUJO DE LOGIN Y PAGO ---
 
         composable(route = AppScreens.LOGIN) {
-            LoginScreen( // <-- NOMBRE CORREGIDO
+            LoginScreen(
                 navController = navController,
                 authViewModel = authViewModel
             )
@@ -93,7 +92,12 @@ fun AppNavigation() {
         ) { backStackEntry ->
             BoletaGeneradaScreen(
                 navController = navController,
-                boletaId = backStackEntry.arguments?.getString("boletaId")
+                boletaId = backStackEntry.arguments?.getString("boletaId"),
+
+                // 🟢 CORRECCIÓN CLAVE: El nombre del parámetro en la llamada debe ser 'carritoViewModel'
+                // para que coincida con la definición de BoletaGeneradaScreen que corregimos.
+                carritoViewModel = carritoViewModel,
+                authViewModel = authViewModel
             )
         }
 
@@ -120,18 +124,24 @@ fun AppNavigation() {
             EditarProductoScreen(
                 navController = navController,
                 viewModel = carritoViewModel,
+                authViewModel = authViewModel,
                 productoId = backStackEntry.arguments?.getInt("productoId")
             )
         }
 
         composable(route = AppScreens.ADMIN_CATEGORIAS) {
-            AdminCategoriasScreen(navController = navController)
+            AdminCategoriasScreen(
+                navController = navController,
+                viewModel = categoriasViewModel,
+                authViewModel = authViewModel
+            )
         }
 
         composable(route = AppScreens.ADMIN_BOLETAS) {
             AdminBoletasScreen(
                 navController = navController,
-                viewModel = carritoViewModel
+                viewModel = carritoViewModel,
+                authViewModel = authViewModel
             )
         }
     }

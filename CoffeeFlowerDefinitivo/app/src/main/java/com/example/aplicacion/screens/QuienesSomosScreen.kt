@@ -1,25 +1,34 @@
 package com.example.aplicacion.screens
 
-import androidx.compose.foundation.Image
+// --- 👇 1. IMPORTS MODIFICADOS 👇 ---
+import androidx.compose.foundation.Image // <-- Se usa Image, no AsyncImage
+import androidx.compose.ui.res.painterResource // <-- Para cargar desde 'drawable'
+import com.example.aplicacion.R // <-- Importante para R.drawable
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+// import androidx.compose.ui.platform.LocalContext // <-- Ya no se necesita
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aplicacion.AuthViewModel
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.aplicacion.CarritoViewModel
+// import coil.compose.AsyncImage // <-- Ya no se usa
+// import coil.request.ImageRequest // <-- Ya no se usa
+import androidx.compose.material3.FabPosition
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuienesSomosScreen(
     navController: NavController,
-    authViewModel: AuthViewModel // <-- ACEPTA EL AUTHVIEWMODEL
+    authViewModel: AuthViewModel
 ) {
+    val carritoViewModel: CarritoViewModel = viewModel()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -31,9 +40,18 @@ fun QuienesSomosScreen(
             )
         },
         bottomBar = {
-            // Usamos la barra de navegación estándar
-            AppBottomBar(navController = navController, authViewModel = authViewModel)
-        }
+            AppBottomBar(
+                navController = navController,
+                authViewModel = authViewModel
+            )
+        },
+        floatingActionButton = {
+            CarritoFloatingButton(
+                navController = navController,
+                carritoViewModel = carritoViewModel
+            )
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -46,17 +64,17 @@ fun QuienesSomosScreen(
             // 1. Logo y Misión/Visión
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                    // --- 👇 2. CÓDIGO DE IMAGEN CORRECTO 👇 ---
+                    // Asumiendo que tu archivo es 'logo.jpeg',
+                    // el ID es R.drawable.logo
                     Image(
-                        painter = rememberAsyncImagePainter(
-                            ImageRequest.Builder(LocalContext.current)
-                                .data(data = "https://placehold.co/400x400/6F4E37/FFFFFF?text=Logo")
-                                .apply(block = fun ImageRequest.Builder.() {
-                                    crossfade(true)
-                                }).build()
-                        ),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(120.dp)
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo de Coffee Flower",
+                        modifier = Modifier.size(120.dp),
+                        contentScale = ContentScale.Fit // 'Fit' es mejor para logos
                     )
+
                     Column {
                         Text("Misión / Visión", style = MaterialTheme.typography.titleLarge)
                         Text(

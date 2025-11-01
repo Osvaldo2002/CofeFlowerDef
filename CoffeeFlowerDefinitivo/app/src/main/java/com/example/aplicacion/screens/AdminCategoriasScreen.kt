@@ -2,8 +2,7 @@ package com.example.aplicacion.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-// import androidx.compose.foundation.lazy.itemsIndexed // <- Ya no se usa
-import androidx.compose.foundation.lazy.items // <-- IMPORTANTE: Usamos 'items'
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,7 +12,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState // <-- IMPORTANTE: Añadir este import
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -23,16 +22,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aplicacion.CategoriasViewModel
 import com.example.aplicacion.model.Categoria
 import com.example.aplicacion.AppScreens
+// 🟢 IMPORTACIÓN NECESARIA
+import com.example.aplicacion.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminCategoriasScreen(
     navController: NavController,
+    // 🟢 CORRECCIÓN: Ahora acepta el AuthViewModel.
+    authViewModel: AuthViewModel,
+    // Nota: El viewModel que se pasa en MainActivity sobrescribirá este default.
     viewModel: CategoriasViewModel = viewModel()
 ) {
-    // --- CORRECCIÓN AQUÍ ---
     // Observamos el StateFlow para obtener la List<Categoria> real
-    val categorias by viewModel.categorias.collectAsState() // <-- CORREGIDO
+    val categorias by viewModel.categorias.collectAsState()
     val isLoading by viewModel.loading.collectAsState()
 
     var showDialog by remember { mutableStateOf(false) }
@@ -55,6 +58,8 @@ fun AdminCategoriasScreen(
                     // Botón para ir a Agregar Producto
                     Button(
                         onClick = {
+                            // Asumo que esta navegación NO requiere AuthViewModel, si lo requiere,
+                            // debes añadirlo a la llamada y al destino.
                             navController.navigate(AppScreens.AGREGAR_PRODUCTO)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -87,7 +92,6 @@ fun AdminCategoriasScreen(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
-            // Ahora 'categorias.isEmpty()' funciona porque 'categorias' es una List
             if (categorias.isEmpty() && !isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -101,11 +105,7 @@ fun AdminCategoriasScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // --- MEJORA AQUÍ ---
-                    // Usamos 'items' y le pasamos un 'key'.
-                    // Esto es crucial para que Compose sepa qué item es cuál
-                    // cuando eliminas o agregas uno. Usamos el 'id' de la categoría.
-                    items(categorias, key = { it.id }) { categoria -> // <-- MEJORADO
+                    items(categorias, key = { it.id }) { categoria ->
                         CategoriaAdminItem(
                             categoria = categoria,
                             onEditClick = {

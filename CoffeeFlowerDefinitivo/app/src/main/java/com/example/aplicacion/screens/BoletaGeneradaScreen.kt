@@ -8,12 +8,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aplicacion.AppScreens
+// Asegúrate de tener estas importaciones:
+import com.example.aplicacion.AuthViewModel
+import com.example.aplicacion.CarritoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoletaGeneradaScreen(
     navController: NavController,
-    boletaId: String?
+    boletaId: String?,
+    // 🟢 CORRECCIÓN CLAVE: Renombramos a 'carritoViewModel' para que el nombre del parámetro coincida 🟢
+    carritoViewModel: CarritoViewModel,
+    authViewModel: AuthViewModel
 ) {
     Scaffold(
         topBar = {

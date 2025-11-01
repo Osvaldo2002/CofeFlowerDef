@@ -21,7 +21,7 @@ import com.example.aplicacion.model.ValorOpcion
 fun CarritoScreen(
     navController: NavController,
     viewModel: CarritoViewModel,
-    authViewModel: AuthViewModel // <-- ACEPTA EL AUTHVIEWMODEL
+    authViewModel: AuthViewModel
 ) {
     val carrito by viewModel.carrito.collectAsState()
     val total by viewModel.totalCarrito.collectAsState()
@@ -31,16 +31,20 @@ fun CarritoScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Carrito de Compras") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary
-                )
+                // ... (colores, etc. sin cambios)
             )
         },
         bottomBar = {
-            // Usamos la barra de navegación estándar
-            AppBottomBar(navController = navController, authViewModel = authViewModel)
+            // --- 👇 MODIFICACIÓN AQUÍ 👇 ---
+            // La llamada ahora es más simple, sin el carritoViewModel
+            AppBottomBar(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
+        // --- NO AÑADIMOS 'floatingActionButton' AQUÍ ---
+        // (No tiene sentido mostrar un botón "Ir al Carrito"
+        //  cuando ya estás en el carrito)
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -48,6 +52,7 @@ fun CarritoScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
+            // ... (El resto de tu pantalla CarritoScreen queda exactamente igual) ...
             if (carrito.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -60,18 +65,16 @@ fun CarritoScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(carrito) { item ->
+                    items(carrito, key = { it.id }) { item ->
                         CarritoItem(
                             item = item,
-                            onSumar = { viewModel.agregarAlCarrito(item.producto, item.opcionesSeleccionadas) },
+                            onSumar = { viewModel.sumarAlCarrito(item) },
                             onRestar = { viewModel.restarDelCarrito(item) },
                             onEliminar = { viewModel.eliminarDelCarrito(item) }
                         )
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(4.dp)
@@ -85,7 +88,6 @@ fun CarritoScreen(
                             Text("$${"%.0f".format(total)}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(16.dp))
-
                         Button(
                             onClick = {
                                 if (userEmail != null) {
@@ -108,6 +110,7 @@ fun CarritoScreen(
     }
 }
 
+// ... (El Composable CarritoItem queda exactamente igual) ...
 @Composable
 fun CarritoItem(
     item: CartItem,
@@ -117,40 +120,20 @@ fun CarritoItem(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(item.producto.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-
                     if (item.opcionesSeleccionadas.isNotEmpty()) {
                         item.opcionesSeleccionadas.forEach { (nombreOpcion, valorOpcion) ->
-                            Text(
-                                text = "  · ${valorOpcion.nombre}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(text = "  · ${valorOpcion.nombre}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
-
                 val precioItem = (item.producto.precio + item.opcionesSeleccionadas.values.sumOf { it.precioAdicional }) * item.cantidad
-                Text(
-                    text = "$${"%.0f".format(precioItem)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "$${"%.0f".format(precioItem)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedButton(onClick = onRestar, modifier = Modifier.size(40.dp), contentPadding = PaddingValues(0.dp)) { Text("-") }
                     Text(text = "${item.cantidad}", modifier = Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.bodyLarge)

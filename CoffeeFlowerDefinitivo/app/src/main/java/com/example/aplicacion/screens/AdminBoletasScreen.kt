@@ -4,11 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-// === CAMBIAR ESTA LÍNEA ===
-// import androidx.compose.material.icons.filled.ArrowBack
-// POR ESTA O SIMPLEMENTE DEJAR QUE EL IDE LO HAGA
-import androidx.compose.material.icons.automirrored.filled.ArrowBack // El ícono moderno para volver atrás
-// ==========================
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.aplicacion.CarritoViewModel
+// 🟢 IMPORTACIÓN NECESARIA
+import com.example.aplicacion.AuthViewModel
 import com.example.aplicacion.model.Boleta
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -26,7 +24,9 @@ import java.util.Locale
 @Composable
 fun AdminBoletasScreen(
     navController: NavController,
-    viewModel: CarritoViewModel
+    viewModel: CarritoViewModel,
+    // 🟢 CORRECCIÓN: Agregar el AuthViewModel que se pasa desde MainActivity
+    authViewModel: AuthViewModel
 ) {
     val boletas by viewModel.boletas.collectAsState()
 
@@ -36,15 +36,15 @@ fun AdminBoletasScreen(
                 title = { Text("Registro de Boletas") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        // === CAMBIO AQUÍ ===
-                        // Ahora usamos Icons.AutoMirrored.Filled.ArrowBack para compatibilidad con RTL
+                        // El ícono moderno para volver atrás
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
-                        // ===================
                     }
                 }
+                // Si la pantalla de AdminBoletas necesitara el botón de logout,
+                // las acciones irían aquí usando el authViewModel.
             )
         }
     ) { innerPadding ->

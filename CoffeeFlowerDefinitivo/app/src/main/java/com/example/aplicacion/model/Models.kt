@@ -24,10 +24,10 @@ data class ValorOpcion(
 )
 
 data class CartItem(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String = UUID.randomUUID().toString(), // Un ID único es clave
     val producto: Producto,
-    var cantidad: Int = 1,
-    val opcionesSeleccionadas: Map<String, ValorOpcion> = emptyMap()
+    val cantidad: Int, // <-- ASEGÚRATE QUE SEA 'val' (INMUTABLE)
+    val opcionesSeleccionadas: Map<String, ValorOpcion>
 )
 
 // --- NUEVA CLASE AÑADIDA ---
