@@ -1,6 +1,6 @@
 [versions]
 # 🔥 CAMBIO CRUCIAL 1: Actualizar AGP a 8.6.0 para que soporte SDK 35 y Compose 1.9.4
-agp = "8.6.0"
+agp = "8.13.0"
 
 # La versión 2.0.21 de Kotlin funciona bien con AGP 8.6.0
 kotlin = "2.0.21"
