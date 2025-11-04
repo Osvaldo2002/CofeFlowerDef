@@ -3,11 +3,18 @@ package com.example.aplicacion
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,7 +44,6 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // Inicializamos todos los ViewModels aquí para compartirlos
     val carritoViewModel: CarritoViewModel = viewModel()
     val authViewModel: AuthViewModel = viewModel()
     val categoriasViewModel: CategoriasViewModel = viewModel()
@@ -63,13 +69,31 @@ fun AppNavigation() {
                 authViewModel = authViewModel
             )
         }
-        composable(route = AppScreens.CARRITO) {
+
+        // --- 👇 CÓDIGO MODIFICADO PARA LA ANIMACIÓN DEL CARRITO 👇 ---
+        composable(
+            route = AppScreens.CARRITO,
+            // Animación de ENTRADA (se desliza desde la parte inferior)
+            enterTransition = {
+                slideInVertically(
+                    animationSpec = tween(durationMillis = 500) // Duración de 0.5s
+                ) { fullHeight -> fullHeight } + fadeIn(tween(500)) // Se desliza y aparece
+            },
+            // Animación de SALIDA (se desliza hacia la parte inferior)
+            exitTransition = {
+                slideOutVertically(
+                    animationSpec = tween(durationMillis = 500)
+                ) { fullHeight -> fullHeight } + fadeOut(tween(500)) // Se desliza y desaparece
+            }
+        ) {
             CarritoScreen(
                 navController = navController,
                 viewModel = carritoViewModel,
                 authViewModel = authViewModel
             )
         }
+        // --- 👆 FIN DEL CÓDIGO MODIFICADO 👆 ---
+
         composable(route = AppScreens.QUIENES_SOMOS) {
             QuienesSomosScreen(
                 navController = navController,
@@ -93,9 +117,6 @@ fun AppNavigation() {
             BoletaGeneradaScreen(
                 navController = navController,
                 boletaId = backStackEntry.arguments?.getString("boletaId"),
-
-                // 🟢 CORRECCIÓN CLAVE: El nombre del parámetro en la llamada debe ser 'carritoViewModel'
-                // para que coincida con la definición de BoletaGeneradaScreen que corregimos.
                 carritoViewModel = carritoViewModel,
                 authViewModel = authViewModel
             )

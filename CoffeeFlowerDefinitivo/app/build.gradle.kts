@@ -74,8 +74,16 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.vectordrawable.animated)
 
+    // --- 👇 LIBRERÍAS AÑADIDAS PARA EL CARRUSEL (Accompanist Pager) 👇 ---
+    val accompanist_version = "0.34.0"
+    // Pager (Carrusel) Core
+    implementation("com.google.accompanist:accompanist-pager:$accompanist_version")
+    // Indicadores para el carrusel (los puntos de navegación)
+    implementation("com.google.accompanist:accompanist-pager-indicators:$accompanist_version")
+    // ----------------------------------------------------------------------
+
     // --- 👇 LÍNEA CORREGIDA 👇 ---
-    // Esta librería ES NECESARIA para el tema base 'Theme.AppCompat...'
+
     implementation(libs.androidx.appcompat)
 
     // --- LIBRERÍAS DE TEST ---
@@ -83,6 +91,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    // implementation(libs.material) // Esta (Material 2) no la necesitas
-}
 
+}

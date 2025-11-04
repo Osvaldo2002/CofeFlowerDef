@@ -46,6 +46,18 @@ import com.example.aplicacion.AuthViewModel
 import com.example.aplicacion.CarritoViewModel
 import com.example.aplicacion.model.Producto
 import com.example.aplicacion.model.ValorOpcion
+// --- IMPORTS AÑADIDOS Y CORREGIDOS PARA EL CARRUSEL ---
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background // Añadido para resolver 'Unresolved reference: background'
+import com.google.accompanist.pager.ExperimentalPagerApi // Añadido para resolver anotación experimental
+import com.google.accompanist.pager.HorizontalPager // Añadido para resolver HorizontalPager
+import com.google.accompanist.pager.HorizontalPagerIndicator // Añadido para resolver HorizontalPagerIndicator
+import com.google.accompanist.pager.rememberPagerState // Añadido para resolver rememberPagerState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
+// --- FIN DE IMPORTS AÑADIDOS Y CORREGIDOS ---
 
 // --- ======================================================= ---
 // --- BARRA DE NAVEGACIÓN (Sin cambios) ---
@@ -147,7 +159,7 @@ fun AppBottomBar(
 
 
 // --- ======================================================= ---
-// --- PANTALLA DE INICIO (MODIFICADA CON FILTRO DE CATEGORÍAS) ---
+// --- PANTALLA DE INICIO (MODIFICADA CON FILTRO DE CATEGORÍAS Y CARRUSEL) ---
 // --- ======================================================= ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -160,11 +172,10 @@ fun InicioScreen(
     var productoParaOpciones by remember { mutableStateOf<Producto?>(null) }
     var textoBusqueda by remember { mutableStateOf("") }
 
-    // --- 👇 1. NUEVO ESTADO PARA EL FILTRO DE CATEGORÍA 👇 ---
     // (null significa "Todos")
     var categoriaSeleccionada by remember { mutableStateOf<String?>(null) }
 
-    // --- 2. Lógica de Búsqueda (se usa en 'else') ---
+    // Lógica de Búsqueda
     val productosFiltradosPorBusqueda = remember(productos, textoBusqueda) {
         if (textoBusqueda.isBlank()) {
             emptyList()
@@ -175,8 +186,7 @@ fun InicioScreen(
         }
     }
 
-    // --- 👇 3. LÓGICA DE CATEGORÍAS (se usa en 'if') 👇 ---
-    // Obtenemos la lista de categorías dinámicamente de los productos
+    // LÓGICA DE CATEGORÍAS
     val categorias = remember(productos) {
         productos.map { it.categoria }.distinct().sorted()
     }
@@ -221,7 +231,7 @@ fun InicioScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
-            // --- BUSCADOR (Sin cambios) ---
+            // --- BUSCADOR ---
             item {
                 OutlinedTextField(
                     value = textoBusqueda,
@@ -246,20 +256,17 @@ fun InicioScreen(
 
                 // --- VISTA POR DEFECTO (SI NO HAY BÚSQUEDA) ---
 
+                // --- 👇 CARRUSEL DE PRODUCTOS (Reemplaza el Banner Principal estático) 👇 ---
                 item {
-                    Card(modifier = Modifier.fillMaxWidth().height(150.dp)) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(data = "https://placehold.co/1200x400/6F4E37/FFFFFF?text=Banner+Principal")
-                                .crossfade(true).build(),
-                            contentDescription = "Banner Principal",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+                    ProductoCarousel(
+                        productos = productos,
+                        navController = navController
+                    )
                 }
+                // --- FIN CARRUSEL ---
 
-                // --- 👇 4. FILTROS DE CATEGORÍA DINÁMICOS 👇 ---
+
+                // --- FILTROS DE CATEGORÍA DINÁMICOS ---
                 item {
                     Text("Categorías", style = MaterialTheme.typography.titleMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -284,12 +291,13 @@ fun InicioScreen(
                     }
                 }
 
-                // --- Destacados (Sin cambios, no se filtra) ---
+                // --- Destacados (Lista horizontal simple) ---
                 item {
-                    Text("Destacados", style = MaterialTheme.typography.titleMedium)
+                    Text("Recomendados", style = MaterialTheme.typography.titleMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(productos.take(2)) { producto ->
                             ProductoCardPequeno(producto = producto, onClick = {
+                                // Navegar a la vista de productos o a un detalle específico
                                 navController.navigate(AppScreens.PRODUCTOS)
                             })
                         }
@@ -306,7 +314,7 @@ fun InicioScreen(
                     Text(tituloLista, style = MaterialTheme.typography.titleMedium)
                 }
 
-                // --- 👇 5. USAMOS LA LISTA FILTRADA POR CATEGORÍA 👇 ---
+                // --- LISTA FILTRADA POR CATEGORÍA ---
                 items(productosFiltradosPorCategoria, key = { it.id }) { producto ->
                     ProductoRowSimple(
                         producto = producto,
@@ -384,6 +392,101 @@ fun InicioScreen(
 
     } // Fin Scaffold
 }
+
+// --- ======================================================= ---
+// --- 👇 NUEVO COMPOSABLE PARA EL CARRUSEL ANIMADO 👇 ---
+// --- ======================================================= ---
+@OptIn(ExperimentalPagerApi::class)
+@Composable
+fun ProductoCarousel(
+    productos: List<Producto>,
+    navController: NavController
+) {
+    // Tomamos los primeros 5 productos para el carrusel, o todos si hay menos
+    val items = remember(productos) { productos.take(5) }
+    if (items.isEmpty()) return // No mostrar si no hay productos
+
+    val pagerState = rememberPagerState(initialPage = 0)
+
+    // Lógica para la animación automática (rota cada 3 segundos)
+    LaunchedEffect(key1 = Unit) {
+        while (true) {
+            delay(3000)
+            yield()
+            val nextPage = (pagerState.currentPage + 1) % items.size
+            pagerState.animateScrollToPage(nextPage)
+        }
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        // 1. Carrusel de Imágenes
+        HorizontalPager(
+            count = items.size,
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp) // Altura del carrusel
+                .clip(RoundedCornerShape(12.dp)) // Bordes redondeados
+        ) { page ->
+            val producto = items[page]
+            Card(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        // Navega a la vista de productos al hacer clic en un slide
+                        navController.navigate(AppScreens.PRODUCTOS)
+                    }
+            ) {
+                Box(contentAlignment = Alignment.BottomStart, modifier = Modifier.fillMaxSize()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(data = producto.imagenUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = producto.nombre,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Superposición de texto para el producto destacado
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            // Fondo semitransparente para mejor legibilidad
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(topEnd = 8.dp))
+                            .padding(4.dp)
+                    ) {
+                        Text(
+                            producto.nombre,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Precio: $${"%.0f".format(producto.precio)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
+        // 2. Indicadores de página (los puntos)
+        Spacer(modifier = Modifier.height(8.dp))
+        HorizontalPagerIndicator(
+            pagerState = pagerState,
+            pageCount = items.size,
+            activeColor = MaterialTheme.colorScheme.primary,
+            inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+    }
+}
+
 
 // --- ======================================================= ---
 // --- COMPOSABLES INTERNOS (Sin cambios) ---
@@ -487,4 +590,3 @@ fun CarritoFloatingButton(
         }
     }
 }
-
