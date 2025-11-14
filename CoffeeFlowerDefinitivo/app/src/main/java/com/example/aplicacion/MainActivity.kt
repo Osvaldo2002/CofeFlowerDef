@@ -23,7 +23,6 @@ import androidx.navigation.navArgument
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.aplicacion.ui.theme.CoffeeFlowerDefinitivoTheme
 import com.example.aplicacion.screens.* // Importa TODAS las pantallas
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

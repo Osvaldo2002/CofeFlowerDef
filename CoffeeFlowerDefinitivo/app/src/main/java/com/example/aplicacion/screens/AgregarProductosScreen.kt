@@ -1,6 +1,5 @@
 package com.example.aplicacion.screens
 
-// --- 👇 1. IMPORTS AÑADIDOS PARA LA GALERÍA Y VISTA PREVIA ---
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -8,8 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-// --- FIN DE IMPORTS AÑADIDOS ---
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,7 +22,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.aplicacion.AppScreens
 import com.example.aplicacion.CarritoViewModel
 import com.example.aplicacion.CategoriasViewModel
 import com.example.aplicacion.model.Categoria
@@ -43,8 +39,6 @@ fun AgregarProductoScreen(
     var descripcion by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
-
-    // 'fotoUrl' guardará la URL (https://) o el Uri (content://) como String
     var fotoUrl by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -54,14 +48,10 @@ fun AgregarProductoScreen(
     var expanded by remember { mutableStateOf(false) }
     val categoriasVacias = categoriasDisponibles.isEmpty()
 
-    // --- 👇 2. LANZADOR PARA EL SELECTOR DE FOTOS ---
-    // Esto abre la galería del teléfono
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia() // El nuevo selector de fotos
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
-        // Cuando el usuario elige una foto, el 'uri' no es nulo
         if (uri != null) {
-            // Guardamos el Uri como un String. Coil sabe cómo leer esto.
             fotoUrl = uri.toString()
         }
     }
@@ -90,7 +80,6 @@ fun AgregarProductoScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // ... (Campos Nombre, Descripcion, Precio, Stock - Sin cambios) ...
             item {
                 OutlinedTextField(
                     value = nombre,
@@ -133,7 +122,6 @@ fun AgregarProductoScreen(
                 )
             }
 
-            // ... (Dropdown de Categoría - Sin cambios) ...
             item {
                 Box(
                     modifier = Modifier
@@ -181,36 +169,30 @@ fun AgregarProductoScreen(
                 }
             }
 
-            // --- 👇 3. SECCIÓN DE FOTO MODIFICADA 👇 ---
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally // Centra el botón y texto
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "Foto (Opcional)",
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.align(Alignment.Start) // El título a la izquierda
+                        modifier = Modifier.align(Alignment.Start)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // VISTA PREVIA (Funciona con URL de internet o Uri de galería)
                     Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
                         AsyncImage(
-                            model = fotoUrl.ifEmpty { // Muestra placeholder si fotoUrl está vacía
-                                "https://placehold.co/600x400/CCCCCC/FFFFFF?text=Vista+Previa"
-                            },
+                            model = fotoUrl.ifEmpty { "https://placehold.co/600x400/CCCCCC/FFFFFF?text=Vista+Previa" },
                             contentDescription = "Vista previa del producto",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop // Rellena el espacio
+                            contentScale = ContentScale.Crop
                         )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // BOTÓN PARA ABRIR GALERÍA
                     Button(onClick = {
-                        // Lanza el selector de fotos (solo imágenes)
                         photoPickerLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
@@ -223,17 +205,15 @@ fun AgregarProductoScreen(
                 }
             }
 
-            // CAMPO DE TEXTO PARA URL (Ahora actualiza la vista previa en vivo)
             item {
                 OutlinedTextField(
                     value = fotoUrl,
-                    onValueChange = { fotoUrl = it }, // El usuario puede pegar una URL aquí
+                    onValueChange = { fotoUrl = it },
                     label = { Text("URL de la Foto o Uri") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
             }
-            // --- 👆 FIN DE LA SECCIÓN DE FOTO 👆 ---
 
             if (error != null) {
                 item {
@@ -241,9 +221,6 @@ fun AgregarProductoScreen(
                 }
             }
 
-            // --- 4. LÓGICA DE GUARDAR (SIN CAMBIOS) ---
-            // 'fotoUrl' ya tiene el String (https://... o content://...)
-            // que necesita ser guardado.
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Button(onClick = {
@@ -264,7 +241,7 @@ fun AgregarProductoScreen(
                                 precio = precioDouble,
                                 stock = stockInt,
                                 categoria = categoriaSeleccionada!!.nombre,
-                                imagenUrl = fotoUrl // Se guarda el String
+                                imagenUrl = fotoUrl
                             )
                             navController.popBackStack()
                         }
@@ -281,4 +258,3 @@ fun AgregarProductoScreen(
         }
     }
 }
-

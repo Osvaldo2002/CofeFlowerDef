@@ -1,6 +1,5 @@
 package com.example.aplicacion.screens
 
-// --- 1. Imports para la galería y vista previa ---
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -9,8 +8,6 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
-// --- Fin Imports ---
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,29 +23,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.aplicacion.AppScreens
-import com.example.aplicacion.AuthViewModel // 🟢 Importación necesaria
-import com.example.aplicacion.CarritoViewModel // 🟢 Importación necesaria
-import com.example.aplicacion.CategoriasViewModel // 🟢 Importación necesaria
+import com.example.aplicacion.AuthViewModel
+import com.example.aplicacion.CarritoViewModel
+import com.example.aplicacion.CategoriasViewModel
 import com.example.aplicacion.model.Categoria
-import com.example.aplicacion.model.Producto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditarProductoScreen(
     navController: NavController,
-    // 🟢 ESTOS PARÁMETROS COINCIDEN CON LA LLAMADA EN MainActivity.kt (Línea 147) 🟢
     viewModel: CarritoViewModel,
     authViewModel: AuthViewModel,
     productoId: Int?
 ) {
-    // --- 3. Obtener el producto (tu lógica está bien) ---
     val productoAEditar = remember(productoId) {
         viewModel.getProductoPorId(productoId ?: -1)
     }
 
-    // --- 4. Estados del formulario (cargados desde 'productoAEditar') ---
-    // NOTA: Si CategoriasViewModel no es un parámetro de la función, debe obtenerse aquí:
     val categoriasViewModel: CategoriasViewModel = viewModel()
     val categoriasDisponibles by categoriasViewModel.categorias.collectAsState()
 
@@ -56,40 +47,43 @@ fun EditarProductoScreen(
     var descripcion by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var stock by remember { mutableStateOf("") }
-    var fotoUrl by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    // --- 5. Lógica de Dropdown de Categoría (en lugar de OutlinedTextField) ---
+    // Estado para el campo de texto de la URL
+    var fotoUrl by remember { mutableStateOf("") }
+    // Estado para la vista previa de la imagen (puede ser URL o ID de drawable)
+    var previewModel by remember { mutableStateOf<Any?>("https://placehold.co/600x400/CCCCCC/FFFFFF?text=Vista+Previa") }
+
     var categoriaSeleccionada by remember { mutableStateOf<Categoria?>(null) }
     var expanded by remember { mutableStateOf(false) }
     val categoriasVacias = categoriasDisponibles.isEmpty()
 
-    // --- 6. Cargar datos en los estados cuando 'productoAEditar' esté listo ---
     LaunchedEffect(productoAEditar, categoriasDisponibles) {
         if (productoAEditar != null) {
             nombre = productoAEditar.nombre
             descripcion = productoAEditar.descripcion
             precio = "%.0f".format(productoAEditar.precio)
             stock = productoAEditar.stock.toString()
-            fotoUrl = productoAEditar.imagenUrl
 
-            // Pre-selecciona la categoría en el dropdown
+            // El campo de texto solo muestra la URL si existe
+            fotoUrl = productoAEditar.imagenUrl ?: ""
+            // La vista previa usa la URL, el ID del recurso, o un placeholder
+            previewModel = productoAEditar.imagenUrl ?: productoAEditar.imagenResId ?: "https://placehold.co/600x400/CCCCCC/FFFFFF?text=Vista+Previa"
+
             if (categoriasDisponibles.isNotEmpty()) {
                 categoriaSeleccionada = categoriasDisponibles.find { it.nombre == productoAEditar.categoria }
             }
         }
     }
 
-    // --- 7. Lanzador de fotos (idéntico a AgregarProductoScreen) ---
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            fotoUrl = uri.toString() // Actualiza el estado 'fotoUrl'
+            fotoUrl = uri.toString()
+            previewModel = uri
         }
     }
-
-    // NOTA: Asumo que AppBottomBar y CarritoFloatingButton han sido definidos en otras partes.
 
     Scaffold(
         topBar = {
@@ -101,16 +95,13 @@ fun EditarProductoScreen(
                 )
             )
         },
-        // --- 8. Usamos la barra de navegación y el FAB consistentes ---
         bottomBar = {
-            // Nota: Se asume que AppBottomBar está definida y acepta navController y authViewModel.
             AppBottomBar(
                 navController = navController,
                 authViewModel = authViewModel
             )
         },
         floatingActionButton = {
-            // Nota: Se asume que CarritoFloatingButton está definida y acepta navController y carritoViewModel.
             CarritoFloatingButton(
                 navController = navController,
                 carritoViewModel = viewModel
@@ -120,7 +111,6 @@ fun EditarProductoScreen(
     ) { innerPadding ->
 
         if (productoId == null || productoAEditar == null) {
-            // ... (Tu manejo de error está perfecto) ...
             Column(
                 modifier = Modifier.padding(innerPadding).padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -140,7 +130,6 @@ fun EditarProductoScreen(
                     .fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // ... (Campos Nombre, Descripcion, Precio, Stock - Sin cambios) ...
                 item {
                     OutlinedTextField(
                         value = nombre,
@@ -162,10 +151,10 @@ fun EditarProductoScreen(
                 item {
                     OutlinedTextField(
                         value = precio,
-                        onValueChange = { precio = it.filter { char -> char.isDigit() || char == '.' } }, // <-- Corrección de filtro
+                        onValueChange = { precio = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Precio *") },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), // <-- Corrección de teclado
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         prefix = { Text("$") },
                         isError = error?.contains("Precio") == true
                     )
@@ -173,7 +162,7 @@ fun EditarProductoScreen(
                 item {
                     OutlinedTextField(
                         value = stock,
-                        onValueChange = { stock = it.filter { char -> char.isDigit() } }, // <-- Corrección de filtro
+                        onValueChange = { stock = it.filter { char -> char.isDigit() } },
                         label = { Text("Stock") },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -181,7 +170,6 @@ fun EditarProductoScreen(
                     )
                 }
 
-                // --- 9. DROPDOWN DE CATEGORÍA ---
                 item {
                     Box(
                         modifier = Modifier
@@ -229,7 +217,6 @@ fun EditarProductoScreen(
                     }
                 }
 
-                // --- 10. SECCIÓN DE FOTO ---
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -243,9 +230,7 @@ fun EditarProductoScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Card(modifier = Modifier.fillMaxWidth().height(200.dp)) {
                             AsyncImage(
-                                model = fotoUrl.ifEmpty {
-                                    "https://placehold.co/600x400/CCCCCC/FFFFFF?text=Vista+Previa"
-                                },
+                                model = previewModel,
                                 contentDescription = "Vista previa del producto",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -266,7 +251,10 @@ fun EditarProductoScreen(
                 item {
                     OutlinedTextField(
                         value = fotoUrl,
-                        onValueChange = { fotoUrl = it },
+                        onValueChange = { 
+                            fotoUrl = it 
+                            previewModel = it
+                        },
                         label = { Text("URL de la Foto o Uri") },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -278,7 +266,6 @@ fun EditarProductoScreen(
                     }
                 }
 
-                // --- 11. LÓGICA DE GUARDAR (Actualizada) ---
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Button(onClick = {
@@ -293,15 +280,14 @@ fun EditarProductoScreen(
                                 error = "Error: Debe seleccionar una Categoría."
                             } else {
                                 error = null
-                                // Usamos .copy() para crear el producto actualizado
                                 val productoActualizado = productoAEditar.copy(
                                     nombre = nombre,
                                     descripcion = descripcion,
                                     precio = precioDouble,
                                     stock = stockInt,
-                                    categoria = categoriaSeleccionada!!.nombre, // <-- Usa el dropdown
-                                    imagenUrl = fotoUrl
-                                    // 'opciones' y 'id' se mantienen
+                                    categoria = categoriaSeleccionada!!.nombre,
+                                    imagenUrl = fotoUrl.ifEmpty { null },
+                                    imagenResId = if (fotoUrl.isNotEmpty()) null else productoAEditar.imagenResId
                                 )
                                 viewModel.actualizarProducto(productoActualizado)
                                 navController.popBackStack()

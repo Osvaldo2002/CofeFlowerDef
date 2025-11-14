@@ -9,7 +9,8 @@ data class Producto(
     val precio: Double,
     val stock: Int,
     val categoria: String,
-    val imagenUrl: String,
+    val imagenUrl: String? = null,
+    val imagenResId: Int? = null,
     val opciones: List<OpcionProducto> = emptyList()
 )
 
